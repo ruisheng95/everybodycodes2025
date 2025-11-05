@@ -1,5 +1,7 @@
 package com.everybodycodes2025.solver;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.everybodycodes2025.record.NodeLong;
@@ -22,9 +24,9 @@ public class Day02 implements Puzzle {
     }
     LOGGER.debug("part1: {}", result);
 
+    char[][] map = new char[101][101];
     start = new NodeLong(-4521, 67892);
     int count = 0;
-    // var end = add(start, new NodeLong(1000, 1000));
     for (int i = 0; i < 101; i++) {
       for (int j = 0; j < 101; j++) {
         var coordinate = add(start, new NodeLong(i * 10, j * 10));
@@ -37,11 +39,15 @@ public class Day02 implements Puzzle {
         if (result.x() < 1000000 && result.y() < 1000000 && result.x() > -1000000
             && result.y() > -1000000) {
           count++;
+          map[i][j] = 'x';
+        } else {
+          map[i][j] = '.';
         }
       }
     }
     LOGGER.debug("part2: {}", count);
 
+    var startTime = System.currentTimeMillis();
     start = new NodeLong(-4521, 67892);
     count = 0;
     for (int i = 0; i < 1001; i++) {
@@ -59,18 +65,45 @@ public class Day02 implements Puzzle {
         }
       }
     }
-    LOGGER.debug("part3: {}", count);
+    var endTime = System.currentTimeMillis();
+
+    // Run part3 using parallel stream
+    var startTime1 = System.currentTimeMillis();
+    int row = 1001;
+    int col = 1001;
+    AtomicInteger count1 = new AtomicInteger();
+    var start1 = new NodeLong(-4521, 67892);
+    IntStream.rangeClosed(0, row * col - 1).boxed().parallel().forEach(index -> {
+      int i = index / row;
+      int j = index % col;
+      var coordinate = add(start1, new NodeLong(i, j));
+      var result1 = new NodeLong(0, 0);
+      for (int k = 0; k < 100; k++) {
+        result1 = multiply(result1, result1);
+        result1 = divide(result1, new NodeLong(100000, 100000));
+        result1 = add(result1, coordinate);
+      }
+      if (result1.x() < 1000000 && result1.y() < 1000000 && result1.x() > -1000000
+          && result1.y() > -1000000) {
+        count1.incrementAndGet();
+      }
+    });
+    var endTime1 = System.currentTimeMillis();
+    // (1) 480ms, (2) 240ms
+    LOGGER.debug("part3(1): {} {}ms", count, endTime - startTime);
+    LOGGER.debug("part3(2): {} {}ms", count1.get(), endTime1 - startTime1);
+    // CommonUtils.print2dChar(map);
   }
 
-  private NodeLong add(NodeLong a, NodeLong b) {
+  private static NodeLong add(NodeLong a, NodeLong b) {
     return new NodeLong(a.x() + b.x(), a.y() + b.y());
   }
 
-  private NodeLong multiply(NodeLong a, NodeLong b) {
+  private static NodeLong multiply(NodeLong a, NodeLong b) {
     return new NodeLong(a.x() * b.x() - a.y() * b.y(), a.x() * b.y() + a.y() * b.x());
   }
 
-  private NodeLong divide(NodeLong a, NodeLong b) {
+  private static NodeLong divide(NodeLong a, NodeLong b) {
     return new NodeLong(a.x() / b.x(), a.y() / b.y());
   }
 }

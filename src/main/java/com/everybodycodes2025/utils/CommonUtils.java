@@ -26,6 +26,7 @@ public class CommonUtils {
   public static void print2dChar(char[][] map) {
     for (var row : map) {
       LOGGER.debug("{}", row);
+      // LOGGER.debug("{}", new String(row));
     }
   }
 
